@@ -13,6 +13,7 @@ buildscript {
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
 
 jar {
 	baseName = 'chat'
@@ -35,4 +36,5 @@ dependencies {
     compile group: 'com.googlecode.json-simple', name: 'json-simple', version:'1.1.1'
 	compile group: 'org.springframework', name: 'spring-jdbc', version: '4.3.6.RELEASE'
 	compile('org.springframework.boot:spring-boot-starter-data-jpa')
+	compile group: 'org.hibernate.dialect', name: 'sqlite-dialect', version: '0.1.0'
 }

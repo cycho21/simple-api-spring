@@ -1,6 +1,7 @@
 package com.nexon.apiserver.dao;
 
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -23,6 +24,8 @@ import java.util.Map;
 @Configuration
 public class Dao {
 
+	@Autowired
+	public UserRepository userRepository;
 	private Logger logger = Logger.getLogger(Dao.class);
 	private JdbcTemplate jdbcTemplate;
 
@@ -107,17 +110,22 @@ public class Dao {
 			return -1;
 		}
 
-		String query = new StringBuilder().append("INSERT INTO users ").append("(nickname) values (?);").toString();
-		KeyHolder keyHolder = new GeneratedKeyHolder();
-		jdbcTemplate.update(new PreparedStatementCreator() {
-			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-				PreparedStatement preparedStatement = con.prepareStatement(query);
-				preparedStatement.setString(1, nickname);
-				return preparedStatement;
-			}
-		}, keyHolder);
-		int userid = keyHolder.getKey().intValue();
-
+//		String query = new StringBuilder().append("INSERT INTO users ").append("(nickname) values (?);").toString();
+//		KeyHolder keyHolder = new GeneratedKeyHolder();
+//		jdbcTemplate.update(new PreparedStatementCreator() {
+//			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+//				PreparedStatement preparedStatement = con.prepareStatement(query);
+//				preparedStatement.setString(1, nickname);
+//				return preparedStatement;
+//			}
+//		}, keyHolder);
+//		int userid = keyHolder.getKey().intValue();
+		User user = new User();
+		user.setNickname(nickname);
+		user = userRepository.save(user);
+		int userid = user.getUserid();
+		System.out.println(userid + "??????????????????????");
+		System.out.println(user.getNickname() + "????????????????????");
 		return userid;
 	}
 
@@ -198,18 +206,23 @@ public class Dao {
 	}
 
 	public User getUser(int userid) {
-		String query = "SELECT nickname FROM users WHERE userid=?;";
-
+//		String query = "SELECT nickname FROM users WHERE userid=?;";
+//
 		User user = new User();
-
-		try {
-			jdbcTemplate.queryForObject(query, new Integer[] { userid }, (rs, rowNum) -> {
-				user.setNickname(rs.getString("nickname"));
-				user.setUserid(userid);
-				return user;
-			});
-		} catch (EmptyResultDataAccessException e) {
-			return new User(null, 0);
+//
+//		try {
+//			jdbcTemplate.queryForObject(query, new Integer[] { userid }, (rs, rowNum) -> {
+//				user.setNickname(rs.getString("nickname"));
+//				user.setUserid(userid);
+//				return user;
+//			});
+//		} catch (EmptyResultDataAccessException e) {
+//			return new User(null, 0);
+//		}
+//		return user;
+		
+		for (User tuser : userRepository.findByUserid(userid)) {
+			return tuser;
 		}
 		return user;
 	}

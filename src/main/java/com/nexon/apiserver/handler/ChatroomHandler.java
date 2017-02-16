@@ -19,28 +19,27 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
  * Created by chan8 on 2017-02-07.
  */
 @RestController
 @RequestMapping(Configuration.BASE_URL + "chatrooms")
 public class ChatroomHandler {
+	
 	private static final String ALREADY_EXIST = "Request name is already exists.";
 	private static final String NOT_YOURS = "Request chatroom was not make by you.";
 
 	@Autowired
 	private Dao dao;
 	
-	private Logger logger = Logger.getLogger(ChatroomHandler.class);
-
 	public ChatroomHandler() {
 	}
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity<?> postChatrooms(@RequestBody Chatroom chatroom) {
-		logger.info(":: Request Method : POST :: URI : /api/v2/chatrooms");
-		
+	public ResponseEntity<?> postChatrooms(@RequestBody Chatroom chatroom, HttpServletRequest request) {
 		if (chatroom.getChatroomname().length() > 100) {
 			chatroom.setChatroomname(chatroom.getChatroomname().substring(0, 100));
 		}
@@ -58,7 +57,7 @@ public class ChatroomHandler {
 	
 	@RequestMapping(method = RequestMethod.GET)
 	@ResponseBody
-	public ResponseEntity<?> getChatroomsList() {
+	public ResponseEntity<?> getChatroomsList(HttpServletRequest request) {
 		ArrayList<Chatroom> chatrooms = dao.getChatrooms();
 		SimpleResponse response = new SimpleResponse();
 		response.setChatrooms(chatrooms);
@@ -67,8 +66,7 @@ public class ChatroomHandler {
 
 	@RequestMapping(value = "/{chatroomid}", method = RequestMethod.PUT)
 	@ResponseBody
-	public ResponseEntity<?> updateChatroomName(@PathVariable(value = "chatroomid") int chatroomid, @RequestBody Chatroom chatroom) {
-		
+	public ResponseEntity<?> updateChatroomName(@PathVariable(value = "chatroomid") int chatroomid, @RequestBody Chatroom chatroom, HttpServletRequest request) {
 		if (dao.getChatRoomByNameById(chatroomid).getChatroomname().equals(chatroom.getChatroomname())) {
 			return new ResponseEntity<>(ALREADY_EXIST, HttpStatus.CONFLICT);
 		}
@@ -85,7 +83,7 @@ public class ChatroomHandler {
 	
 	@RequestMapping(value = "/{chatroomid}/users", method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity<?> joinChatroom(@PathVariable(value = "chatroomid") int chatroomid, @RequestBody User user) {
+	public ResponseEntity<?> joinChatroom(@PathVariable(value = "chatroomid") int chatroomid, @RequestBody User user, HttpServletRequest request) {
 		int userid = user.getUserid();
 		dao.joinChatroom(userid, chatroomid);
 		return new ResponseEntity<>(null, HttpStatus.OK);
@@ -93,7 +91,7 @@ public class ChatroomHandler {
 	
 	@RequestMapping(value = "/{chatroomid}/users/{userid}", method = RequestMethod.DELETE)
 	@ResponseBody
-	public ResponseEntity<?> quitChatroom(@PathVariable(value = "chatroomid") int chatroomid, @PathVariable(value = "userid") int userid) {
+	public ResponseEntity<?> quitChatroom(@PathVariable(value = "chatroomid") int chatroomid, @PathVariable(value = "userid") int userid, HttpServletRequest request) {
 		dao.quitChatroom(chatroomid, userid);
 		if (dao.getChatroomJoiner(chatroomid).size() == 0) {
 			dao.deleteChatroom(chatroomid);
@@ -105,7 +103,7 @@ public class ChatroomHandler {
 	
 	@RequestMapping(value = "/{chatroomid}/users", method = RequestMethod.GET)
 	@ResponseBody
-	public ResponseEntity<?> getUserFromChatroom(@PathVariable(value = "chatroomid") int chatroomid) {
+	public ResponseEntity<?> getUserFromChatroom(@PathVariable(value = "chatroomid") int chatroomid, HttpServletRequest request) {
 		ArrayList<User> users = dao.getChatroomJoiner(chatroomid);
 		SimpleResponse response = new SimpleResponse();
 		response.setUsers(users);
@@ -115,7 +113,7 @@ public class ChatroomHandler {
 
 	@RequestMapping(value = "/{chatroomid}/messages", method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity<?> postMessage(@PathVariable(value = "chatroomid") int chatroomid, @RequestBody Message message) {
+	public ResponseEntity<?> postMessage(@PathVariable(value = "chatroomid") int chatroomid, @RequestBody Message message, HttpServletRequest request) {
 		int messageid = dao.postMessage(message.getSenderid(), message.getReceiverid(), chatroomid, message.getMessagebody());
 		Message checkMessage = dao.checkMessage(messageid);
 		
@@ -129,7 +127,7 @@ public class ChatroomHandler {
 	
 	@RequestMapping(value = "/{chatroomid}/messages", method = RequestMethod.GET)
 	@ResponseBody
-	public ResponseEntity<?> getMessage(@PathVariable(value = "chatroomid") int chatroomid, @RequestHeader(value = "userid") int userid) {
+	public ResponseEntity<?> getMessage(@PathVariable(value = "chatroomid") int chatroomid, @RequestHeader(value = "userid") int userid, HttpServletRequest request) {
 		ArrayList<Message> messageArrayList = dao.getMessagesByChatroomId(chatroomid, userid);
 		SimpleResponse response = new SimpleResponse();
 		response.setMessages(messageArrayList);

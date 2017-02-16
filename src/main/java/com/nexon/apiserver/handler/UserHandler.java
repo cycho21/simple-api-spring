@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
  * Created by Administrator on 2017-02-04.
  */
@@ -41,7 +43,7 @@ public class UserHandler {
 	
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity<?> postUser(@RequestBody User user) {
+	public ResponseEntity<?> postUser(@RequestBody User user, HttpServletRequest request) {
 		
 		if (dao.getUser(user.getNickname()).getUserid() != 0)
 			return ResponseEntity.status(HttpStatus.CONFLICT).body(ALREADY_EXIST);
@@ -70,7 +72,7 @@ public class UserHandler {
 
 	@RequestMapping(value = "/{userid}", method = RequestMethod.PUT)
 	@ResponseBody
-	public ResponseEntity<?> putUser(@PathVariable(value = "userid") int userid, @RequestBody User user) {
+	public ResponseEntity<?> putUser(@PathVariable(value = "userid") int userid, @RequestBody User user, HttpServletRequest request) {
 		
 		if (dao.getUser(user.getNickname()).getUserid() != 0)
 			return new ResponseEntity<>(ALREADY_EXIST, HttpStatus.CONFLICT);
@@ -95,7 +97,7 @@ public class UserHandler {
 
 	@RequestMapping(value = "/{userid}", method = RequestMethod.DELETE)
 	@ResponseBody
-	public ResponseEntity<?> deleteUser(@PathVariable(value = "userid") int userid) {
+	public ResponseEntity<?> deleteUser(@PathVariable(value = "userid") int userid, HttpServletRequest request) {
 		if (dao.getUser(userid).getUserid() != 0) {
 			dao.deleteUser(userid);
 			return new ResponseEntity<>(null, HttpStatus.OK);
@@ -106,7 +108,7 @@ public class UserHandler {
 
 	@RequestMapping(value = "/{userid}/chatrooms", method = RequestMethod.GET)
 	@ResponseBody
-	public ResponseEntity<?> getChatroomsFromSpecificUser(@PathVariable(value = "userid") int userid) {
+	public ResponseEntity<?> getChatroomsFromSpecificUser(@PathVariable(value = "userid") int userid, HttpServletRequest request) {
 		ArrayList<Chatroom> chatrooms = dao.getChatRoomByUserid(userid);
 		SimpleResponse response = new SimpleResponse();
 		response.setChatrooms(chatrooms);
@@ -115,7 +117,7 @@ public class UserHandler {
 	
 	@RequestMapping(value = "/{userid}", method = RequestMethod.GET)
 	@ResponseBody
-	public ResponseEntity<?> getUser(@PathVariable(value = "userid") int userid) {
+	public ResponseEntity<?> getUser(@PathVariable(value = "userid") int userid, HttpServletRequest request) {
         User user = dao.getUser(userid);
         if (user.getNickname() != null) {
             return new ResponseEntity<>(user, HttpStatus.OK);

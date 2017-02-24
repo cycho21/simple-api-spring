@@ -5,7 +5,6 @@ import com.nexon.apiserver.dao.Dao;
 import com.nexon.apiserver.dao.Message;
 import com.nexon.apiserver.dao.SimpleResponse;
 import com.nexon.apiserver.dao.User;
-import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

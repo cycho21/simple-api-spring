@@ -18,7 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Created by Administrator on 2017-02-04.
@@ -26,12 +28,19 @@ import javax.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping(Configuration.BASE_URL + "users")
 public class UserHandler {
+	
+	@Autowired
+	private RandomStringGenerator randomStringGenerator;
+	
+	@Autowired
+	private SecurityAlgorithm securityAlgorithm;
+	
 	private static final String SPECIAL_LETTER = "Nickname must alphanumeric but request nickname contains special letters.";
 	private static final String LONGER_THAN_TWENTY = "Nickname must less than 20 characters.";
 	private static final String NO_USER = "There is no user that you request.";
 	private static final String ALREADY_EXIST = "Request name is already exists.";
 	private static final String NOT_FOUND = "User not found...";
-
+	
 	@Autowired
 	private Dao dao;
 	
@@ -47,7 +56,8 @@ public class UserHandler {
 		
 		if (dao.getUser(user.getNickname()).getUserid() != 0)
 			return ResponseEntity.status(HttpStatus.CONFLICT).body(ALREADY_EXIST);
-
+		
+		user.setPassword(securityAlgorithm.getSHA256(user.getPassword()));
 		int code = nicknameValidator.isValidateName(user.getNickname());
 		
 		switch (code) {
@@ -60,13 +70,56 @@ public class UserHandler {
 		
 		case NicknameValidator.ALPHA_NUMERIC:
 			User retUser = new User();
-			int userid = dao.addUser(user.getNickname());
+			int userid = dao.addUser(user.getNickname(), user.getPassword());
 			retUser.setUserid(userid);
 			retUser.setNickname(user.getNickname());
 			return new ResponseEntity<>(retUser, HttpStatus.OK);
 			
 		default:
 			return null;
+		}
+	}
+	
+	@RequestMapping(method = RequestMethod.GET)
+	@ResponseBody
+	public ResponseEntity<?> getAllUser(HttpServletRequest request) {
+		ArrayList<User> list = null;
+		
+		list = dao.getAllUser();
+		
+		return new ResponseEntity<>(list, HttpStatus.OK);
+	}
+	
+	@RequestMapping(value = "/signout", method = RequestMethod.POST)
+	@ResponseBody
+	public ResponseEntity<?> signOut(HttpServletRequest request) {
+		String sessionid = request.getHeader("sessionid");
+		
+		if (!SimpleSession.getSession().containsKey(sessionid)) {
+			return new ResponseEntity<>("You are not logged in", HttpStatus.UNAUTHORIZED);
+		} else {
+			SimpleSession.getSession().remove(sessionid);
+			return new ResponseEntity<>("Sign out succeessful", HttpStatus.OK);
+		}
+	}
+	
+	@RequestMapping(value = "/signin", method = RequestMethod.POST)
+	@ResponseBody
+	public ResponseEntity<?> signIn(@RequestBody User user, HttpServletResponse response, HttpServletRequest request) {
+		
+		String sessionid = randomStringGenerator.nextRandomString(32).toUpperCase();
+
+		if (!SimpleSession.getSession().containsKey(sessionid))
+			SimpleSession.getSession().put(sessionid, new SessionStatus.StatusBuilder().setLoggedIn(true).build());
+		
+		user.setPassword(securityAlgorithm.getSHA256(user.getPassword()));
+		int userid = dao.signIn(user.getNickname(), user.getPassword()).getUserid();
+		if (userid != 0) {
+			response.addCookie(new Cookie("sessionid", sessionid));
+			user.setUserid(userid);
+			return new ResponseEntity<>(user, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
 		}
 	}
 
@@ -105,6 +158,7 @@ public class UserHandler {
 			return new ResponseEntity<>(NO_USER, HttpStatus.BAD_REQUEST);
 		}
 	}
+	
 
 	@RequestMapping(value = "/{userid}/chatrooms", method = RequestMethod.GET)
 	@ResponseBody

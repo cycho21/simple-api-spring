@@ -9,11 +9,11 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 
 @Aspect
-public class LoggingAspect {
+public class LoggingAdvice {
 	
-	private Logger logger = Logger.getLogger(LoggingAspect.class);
+	private Logger logger = Logger.getLogger(LoggingAdvice.class);
 	
-	@Before("execution(* com.nexon.apiserver.handler.*.*(..))")
+	@Before("execution(* com.nexon.apiserver.handler.*Handler.*(..))")
 	public void logMethodAndUri(JoinPoint joinPoint) {
 		Object[] args = joinPoint.getArgs();
 		HttpServletRequest request = (HttpServletRequest) args[args.length - 1];

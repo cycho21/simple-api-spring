@@ -40,6 +40,7 @@ public class UserHandler {
 	private static final String NO_USER = "There is no user that you request.";
 	private static final String ALREADY_EXIST = "Request name is already exists.";
 	private static final String NOT_FOUND = "User not found...";
+	private static final String NOT_LOGGED_IN = "You are not logged in...";
 	
 	@Autowired
 	private Dao dao;
@@ -94,7 +95,6 @@ public class UserHandler {
 	@ResponseBody
 	public ResponseEntity<?> signOut(HttpServletRequest request) {
 		String sessionid = request.getHeader("sessionid");
-		
 		if (!SimpleSession.getSession().containsKey(sessionid)) {
 			return new ResponseEntity<>("You are not logged in", HttpStatus.UNAUTHORIZED);
 		} else {
@@ -108,24 +108,36 @@ public class UserHandler {
 	public ResponseEntity<?> signIn(@RequestBody User user, HttpServletResponse response, HttpServletRequest request) {
 		
 		String sessionid = randomStringGenerator.nextRandomString(32).toUpperCase();
-
-		if (!SimpleSession.getSession().containsKey(sessionid))
-			SimpleSession.getSession().put(sessionid, new SessionStatus.StatusBuilder().setLoggedIn(true).build());
 		
 		user.setPassword(securityAlgorithm.getSHA256(user.getPassword()));
 		int userid = dao.signIn(user.getNickname(), user.getPassword()).getUserid();
 		if (userid != 0) {
 			response.addCookie(new Cookie("sessionid", sessionid));
 			user.setUserid(userid);
+			
+			if (!SimpleSession.getSession().containsKey(sessionid))
+				SimpleSession.getSession().put(sessionid, new SessionStatus.StatusBuilder().setLoggedIn(true).setUserId(userid).build());
+			
 			return new ResponseEntity<>(user, HttpStatus.OK);
 		} else {
 			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
 		}
 	}
+	
+	public boolean checkSessionid(HttpServletRequest request) {
+		String sessionid = request.getHeader("sessionid");
+		if (!SimpleSession.getSession().containsKey(sessionid))
+			return false;
+		else
+			return true;
+	}
 
 	@RequestMapping(value = "/{userid}", method = RequestMethod.PUT)
 	@ResponseBody
 	public ResponseEntity<?> putUser(@PathVariable(value = "userid") int userid, @RequestBody User user, HttpServletRequest request) {
+		
+		if (!checkSessionid(request))
+			return new ResponseEntity<>(NOT_LOGGED_IN, HttpStatus.UNAUTHORIZED);
 		
 		if (dao.getUser(user.getNickname()).getUserid() != 0)
 			return new ResponseEntity<>(ALREADY_EXIST, HttpStatus.CONFLICT);
@@ -163,6 +175,7 @@ public class UserHandler {
 	@RequestMapping(value = "/{userid}/chatrooms", method = RequestMethod.GET)
 	@ResponseBody
 	public ResponseEntity<?> getChatroomsFromSpecificUser(@PathVariable(value = "userid") int userid, HttpServletRequest request) {
+		System.out.println(userid);
 		ArrayList<Chatroom> chatrooms = dao.getChatRoomByUserid(userid);
 		SimpleResponse response = new SimpleResponse();
 		response.setChatrooms(chatrooms);

@@ -1,6 +1,5 @@
 package com.nexon.apiserver.dao;
 
-
 /**
  * Created by chan8 on 2017-02-08.
  */
@@ -10,12 +9,21 @@ public class Message {
 	private int receiverid = 0;
 	private String messagebody = null;
 	private int chatroomid = 0;
+	private String sendernickname;
 
 	public Message() {
 	}
 
 	public int getSenderid() {
 		return senderid;
+	}
+
+	public String getSendernickname() {
+		return sendernickname;
+	}
+
+	public void setSendernickname(String sendernickname) {
+		this.sendernickname = sendernickname;
 	}
 
 	public void setSenderid(int senderid) {

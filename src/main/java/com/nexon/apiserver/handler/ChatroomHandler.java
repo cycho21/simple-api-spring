@@ -46,11 +46,14 @@ public class ChatroomHandler {
 		if (dao.getChatRoomByNameById(chatroom.getChatroomname()).getChatroomid() != 0) {
 			return new ResponseEntity<>(ALREADY_EXIST, HttpStatus.CONFLICT);
 		}
-
-		int chatroomid = dao.addChatRoom(chatroom.getChatroomname(), chatroom.getUserid());
+		
+		String sessionid = request.getHeader("sessionid");
+		int userid = SimpleSession.getSession().get(sessionid).getUserid();
+		
+		int chatroomid = dao.addChatRoom(chatroom.getChatroomname(), userid);
 		chatroom.setChatroomid(chatroomid);
-		dao.joinChatroom(chatroom.getUserid(), chatroom.getChatroomid());
-
+		
+		dao.joinChatroom(userid, chatroom.getChatroomid());
 		return new ResponseEntity<>(chatroom, HttpStatus.OK);
 	}
 	
@@ -84,8 +87,16 @@ public class ChatroomHandler {
 	@ResponseBody
 	public ResponseEntity<?> joinChatroom(@PathVariable(value = "chatroomid") int chatroomid, @RequestBody User user, HttpServletRequest request) {
 		int userid = user.getUserid();
+		
+		ArrayList<Chatroom> temp = dao.getChatRoomByUserid(userid);
+		for (Chatroom tChat : temp) {
+			if (tChat.getChatroomid() == chatroomid)
+				return new ResponseEntity<>("You are already joind", HttpStatus.BAD_REQUEST);
+		}
+		
 		dao.joinChatroom(userid, chatroomid);
-		return new ResponseEntity<>(null, HttpStatus.OK);
+		Chatroom chatroom = dao.getChatRoomByNameById(chatroomid);
+		return new ResponseEntity<>(chatroom, HttpStatus.OK);
 	}
 	
 	@RequestMapping(value = "/{chatroomid}/users/{userid}", method = RequestMethod.DELETE)
@@ -115,7 +126,7 @@ public class ChatroomHandler {
 	public ResponseEntity<?> postMessage(@PathVariable(value = "chatroomid") int chatroomid, @RequestBody Message message, HttpServletRequest request) {
 		int messageid = dao.postMessage(message.getSenderid(), message.getReceiverid(), chatroomid, message.getMessagebody());
 		Message checkMessage = dao.checkMessage(messageid);
-		
+		checkMessage.setSendernickname(dao.getUser(checkMessage.getSenderid()).getNickname());
 		if (messageid != 0) {
 			checkMessage.setMessageid(messageid);
 			return new ResponseEntity<>(checkMessage, HttpStatus.OK);
@@ -128,6 +139,11 @@ public class ChatroomHandler {
 	@ResponseBody
 	public ResponseEntity<?> getMessage(@PathVariable(value = "chatroomid") int chatroomid, @RequestHeader(value = "userid") int userid, HttpServletRequest request) {
 		ArrayList<Message> messageArrayList = dao.getMessagesByChatroomId(chatroomid, userid);
+		
+		for (Message message : messageArrayList) {
+			message.setSendernickname(dao.getUser(message.getSenderid()).getNickname());
+		}
+		
 		SimpleResponse response = new SimpleResponse();
 		response.setMessages(messageArrayList);
 		return new ResponseEntity<>(response, HttpStatus.OK);

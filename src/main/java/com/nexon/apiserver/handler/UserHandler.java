@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -95,6 +94,7 @@ public class UserHandler {
 	@ResponseBody
 	public ResponseEntity<?> signOut(HttpServletRequest request) {
 		String sessionid = request.getHeader("sessionid");
+		
 		if (!SimpleSession.getSession().containsKey(sessionid)) {
 			return new ResponseEntity<>("You are not logged in", HttpStatus.UNAUTHORIZED);
 		} else {
@@ -111,8 +111,9 @@ public class UserHandler {
 		
 		user.setPassword(securityAlgorithm.getSHA256(user.getPassword()));
 		int userid = dao.signIn(user.getNickname(), user.getPassword()).getUserid();
+		
 		if (userid != 0) {
-			response.addCookie(new Cookie("sessionid", sessionid));
+			response.setHeader("sessionid", sessionid);
 			user.setUserid(userid);
 			
 			if (!SimpleSession.getSession().containsKey(sessionid))

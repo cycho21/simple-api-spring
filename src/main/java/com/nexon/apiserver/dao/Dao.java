@@ -160,8 +160,18 @@ public class Dao {
 	}
 	
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	public ArrayList<Message> getMessagesByChatroomId(int chatroomid, int userid) {
+	public ArrayList<Message> getMessagesByUserId(int chatroomid, int userid) {
 		return messageMapper.getMessageByUserId(chatroomid, userid, userid);
+	}
+	
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public ArrayList<Message> getMessages(int chatroomid) {
+		return messageMapper.getMessages(chatroomid);
+	}
+	
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public ArrayList<Message> getWhispersByUserId(int chatroomid, int userid) {
+		return messageMapper.getWhisperByUserId(chatroomid, userid, userid);
 	}
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -225,6 +235,11 @@ public class Dao {
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void quitChatroom(int chatroomid, int userid) {
 		chatroomMapper.quitChatroom(chatroomid, userid);
+	}
+	
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public void deleteMessages(int chatroomid) {
+		messageMapper.deleteMessagesFromDeletedChatroom(chatroomid);
 	}
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
